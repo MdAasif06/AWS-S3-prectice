@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
@@ -9,6 +10,7 @@ import connectDB from "./config/db.js"
 connectDB()
 const app = express();
 app.use(express.json()); // for JSON body
+app.use(cors())
 app.use(express.urlencoded({ extended: true }));
 
 const port = 3200;
