@@ -1,11 +1,19 @@
 import express from "express";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
 dotenv.config();
-
+import { productModel } from "./models/product.model.js";
+import connectDB from "./config/db.js" 
+connectDB()
 const app = express();
+app.use(express.json()); // for JSON body
+app.use(express.urlencoded({ extended: true }));
+
 const port = 3200;
+
+//initilaized client
 const client = new S3Client({
   region: "ap-south-1",
   credentials: {
@@ -15,18 +23,44 @@ const client = new S3Client({
 });
 
 const createPresignedUrlWithClient = ({ bucket, key }) => {
-  const command = new GetObjectCommand({ Bucket: bucket, Key: key });
+  const command = new PutObjectCommand({ Bucket: bucket, Key: key });
   return getSignedUrl(client, command, { expiresIn: 3600 });
 };
 
-app.get("/api/get-presigned-url", async (req, res) => {
+app.post("/api/get-presigned-url", async (req, res) => {
+  const { mime } = req.body;
   //get the presigned url from s3
+  const filename = uuidv4();
+  const finalName = `${filename}.${mime}`;
   const url = await createPresignedUrlWithClient({
     bucket: process.env.S3_BUCKET_NAME,
-    key: "file1.png",
+    key: finalName,
   });
-  console.log("url", url);
-  res.json({ result: url });
+  res.json({ url: url, finalName: filename });
+});
+
+app.post("/api/products", (req, res) => {
+  //get data from request
+  const { name, description, price, filename } = req.body;
+
+  //validate request
+  if (!name || !description || !price || !filename) {
+    res.json({
+      message: "all field are required",
+    });
+    return;
+  }
+  //save to database
+  const product=productModel.create({
+    name,
+    description,
+    price,
+    filename
+  })
+  console.log("product",product)
+  res.json({
+    message: "success product created successfull",
+  });
 });
 
 app.get("/", (req, res) => {
