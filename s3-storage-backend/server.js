@@ -65,6 +65,12 @@ app.post("/api/products", async(req, res) => {
   });
 });
 
+app.get('/api/products',async (req,res)=>{
+  const products=await productModel.find();
+  res.json(products)
+})
+
+
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
