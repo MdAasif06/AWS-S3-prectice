@@ -38,10 +38,10 @@ app.post("/api/get-presigned-url", async (req, res) => {
     bucket: process.env.S3_BUCKET_NAME,
     key: finalName,
   });
-  res.json({ url: url, finalName: filename });
+  res.json({ url: url, finalName: finalName });
 });
 
-app.post("/api/products", (req, res) => {
+app.post("/api/products", async(req, res) => {
   //get data from request
   const { name, description, price, filename } = req.body;
 
@@ -53,7 +53,7 @@ app.post("/api/products", (req, res) => {
     return;
   }
   //save to database
-  const product=productModel.create({
+  const product= await productModel.create({
     name,
     description,
     price,

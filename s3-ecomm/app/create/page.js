@@ -3,12 +3,14 @@
 import { useState } from "react";
 
 export default function CreateProductPage() {
-  const [imageFile, setImageFile] = useState(null);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [filename, setFilename] = useState("");
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0]; //only first file
     if (file) {
-      setImageFile(file);
       //mime
       const mime = file.type.split("/")[1];
       console.log("mime", mime);
@@ -31,27 +33,55 @@ export default function CreateProductPage() {
         return;
       }
       const data = await response.json();
-      console.log("data",data);
+      console.log("data", data);
+      setFilename(data.finalName);
       //uploda the file s3
-      const res = await fetch(data.url,{
-        method:"PUT",
-        headers:{
-          'content-type':file.type || 'application/octet-stream'
+      const res = await fetch(data.url, {
+        method: "PUT",
+        headers: {
+          "content-type": file.type || "application/octet-stream",
         },
-        body:file   //binary payload
-      })
+        body: file, //binary payload
+      });
       if (!res.ok) {
         console.log(`Error uploading the file s3`);
         return;
       }
-      console.log('success')
+      console.log("success");
       console.log(`selected file`, file);
     }
   };
+
+  const handleSubmit = async () => {
+    const res = await fetch("http://localhost:3200/api/products", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        description,
+        price,
+        filename,
+      }),
+    });
+    if (!res) {
+      console.error("failed to create a product");
+      return;
+    }
+    console.log("success")
+    //todo : form the clear
+  };
+
   return (
     <div className="flex flex-col justify-center items-center w-full h-screen">
-      <form className="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md space-y-4"
+      >
         <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           type="text"
           placeholder="Product Name"
           className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
@@ -59,6 +89,8 @@ export default function CreateProductPage() {
         />
 
         <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="Description"
           className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
           rows="3"
@@ -66,6 +98,8 @@ export default function CreateProductPage() {
         />
 
         <input
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
           type="number"
           placeholder="Price"
           className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
